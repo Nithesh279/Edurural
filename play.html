@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson player • EDURURAL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 40px 16px;
+      background: radial-gradient(circle at top left, #e0f2fe, #f9fafb 45%, #eef2ff);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand img {
+      height: 48px;
+      width: auto;
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 650;
+      color: #111827;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 22px 22px 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      margin: 0 0 8px 0;
+      color: #111827;
+      font-size: 1.4rem;
+      font-weight: 650;
+      text-align: left;
+    }
+
+    .meta {
+      color: #6b7280;
+      margin: 4px 0 14px;
+      font-size: 0.92rem;
+    }
+
+    .wrap {
+      margin-top: 4px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 12px 0 4px;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 999px;
+      background: #0ea5e9;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    button:hover {
+      background: #0284c7;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+      background: #000;
+    }
+
+    @media (max-width: 768px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="top-bar">
+      <div class="brand">
+        <img src="/static/logo.svg" alt="EDURURAL logo">
+        <div class="brand-title">Lesson player</div>
+      </div>
+      <button type="button" onclick="window.location.href='/index.html'"
+        style="background:#f3f4ff;color:#4f46e5;border-radius:999px;border:1px solid #c7d2fe;padding-inline:14px;">
+        ← Back to library
+      </button>
+    </div>
+
+    <div class="container">
+      <div class="wrap">
+        <h2>Lesson</h2>
+        <div class="meta" id="meta"></div>
+        <video id="player" controls></video>
+        <div class="controls">
+          <span>Speed:</span>
+          <button data-rate="0.25">0.25x</button>
+          <button data-rate="0.5">0.5x</button>
+          <button data-rate="1">1x</button>
+          <button data-rate="1.25">1.25x</button>
+          <button data-rate="1.5">1.5x</button>
+          <button data-rate="2">2x</button>
+          <button data-rate="3">3x</button>
+          <span style="flex:1"></span>
+          <div style="position:relative; display:inline-block;">
+            <button id="downloadNotesBtn" style="background: #10b981;" onclick="toggleNotesMenu()">📄 Notes</button>
+            <div id="notesDropdown" style="display:none; position:absolute; bottom:100%; right:0; background:white; border:1px solid #ccc; border-radius:8px; padding:4px; z-index:100; flex-direction:column; gap:2px; margin-bottom:8px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1); white-space:nowrap; text-align:left;">
+              <div onclick="executeDownload('English')" style="color:#374151; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:4px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">1. Download in English</div>
+              <div onclick="executeDownload(lang)" style="color:#374151; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:4px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">2. Download in preferred language</div>
+            </div>
+          </div>
+          <button id="toggleScreen">⛶ Full screen</button>
+          <button id="takeTestBtn" style="display:none; background: #8b5cf6;" onclick="openTestModal()">📝 Take
+            Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Test Taking Modal -->
+  <div id="test-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div class="container" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <h3>Lesson Quiz</h3>
+      <div id="quiz-content"></div>
+      <div id="quiz-result" style="display:none; margin-top:1rem; padding:1rem; border-radius:8px;"></div>
+      <div class="controls" style="justify-content: flex-end; margin-top: 1rem;">
+        <button onclick="closeTestModal()" style="background: #6b7280;">Close</button>
+        <button id="submitTestBtn" onclick="submitTest()" style="background: #0ea5e9;">Submit Answers</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const url = params.get('url');
+    const lang = params.get('lang');
+    const file = params.get('file');
+    const videoId = params.get('video_id');
+    const meta = document.getElementById('meta');
+    const player = document.getElementById('player');
+
+    let watchStartTime = 0;
+    let totalWatchDuration = 0;
+    let lastUpdateTime = Date.now();
+    let updateInterval = null;
+
+    if (!url) {
+      meta.innerText = 'Missing video URL';
+    } else {
+      meta.innerText = `${file || ''} • ${lang || ''}`;
+      player.src = url;
+    }
+
+    function toggleNotesMenu() {
+      if (!videoId) {
+        alert("Video ID not found.");
+        return;
+      }
+      if (!lang || lang.toLowerCase() === 'english') {
+          executeDownload('English');
+          return;
+      }
+      const dd = document.getElementById("notesDropdown");
+      if (dd) {
+        dd.style.display = dd.style.display === 'none' ? 'flex' : 'none';
+      }
+    }
+
+    function executeDownload(targetLang) {
+      if (!videoId) return;
+      window.open(`/download_notes/${videoId}?lang=${encodeURIComponent(targetLang)}`, '_blank');
+      const dd = document.getElementById("notesDropdown");
+      if (dd) dd.style.display = 'none';
+    }
+
+    async function updateWatchHistory() {
+      if (!videoId) return;
+      const currentTime = player.currentTime || 0;
+      const duration = player.duration || 0;
+      const now = Date.now();
+      const elapsed = (now - lastUpdateTime) / 1000;
+      lastUpdateTime = now;
+
+      if (player.paused) return;
+
+      totalWatchDuration += elapsed;
+      const completed = currentTime >= duration * 0.9;
+
+      try {
+        await fetch('/watch-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            video_id: parseInt(videoId),
+            watch_duration: totalWatchDuration,
+            total_duration: duration,
+            language_used: lang || 'English',
+            completed: completed
+          })
+        });
+      } catch (e) {
+        console.error('Failed to update watch history:', e);
+      }
+    }
+
+    player.addEventListener('play', () => {
+      watchStartTime = Date.now();
+      lastUpdateTime = watchStartTime;
+      updateInterval = setInterval(updateWatchHistory, 5000);
+    });
+
+    player.addEventListener('pause', () => {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+      updateWatchHistory();
+    });
+
+    player.addEventListener('ended', () => {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+      updateWatchHistory();
+    });
+
+    player.addEventListener('timeupdate', () => {
+      if (Date.now() - lastUpdateTime > 10000) {
+        updateWatchHistory();
+      }
+    });
+
+    document.querySelectorAll('button[data-rate]').forEach(b => {
+      b.addEventListener('click', () => { player.playbackRate = parseFloat(b.dataset.rate); });
+    });
+    const toggle = document.getElementById('toggleScreen');
+    function isFullscreen() {
+      return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+    }
+    function enterFs(el) {
+      if (el.requestFullscreen) return el.requestFullscreen();
+      if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+      if (el.msRequestFullscreen) return el.msRequestFullscreen();
+    }
+    function exitFs() {
+      if (document.exitFullscreen) return document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+      if (document.msExitFullscreen) return document.msExitFullscreen();
+    }
+    toggle.addEventListener('click', () => {
+      if (!isFullscreen()) { enterFs(document.querySelector('.wrap')); toggle.innerText = '🗗 Half screen'; }
+      else { exitFs(); toggle.innerText = '⛶ Full screen'; }
+    });
+
+    let currentTestId = null;
+    let questionsData = [];
+
+    async function checkTest() {
+      if (!videoId) return;
+      try {
+        const res = await fetch(`/api/student/tests/${videoId}`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.found) {
+          document.getElementById('takeTestBtn').style.display = 'inline-block';
+          currentTestId = data.test_id;
+          questionsData = data.questions;
+          if (data.attempt) {
+            // Show previous result if needed, or allow retake?
+            // For now, just let them retake or show "Retake Test"
+          }
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function openTestModal() {
+      document.getElementById('test-modal').style.display = 'flex';
+      renderQuiz();
+    }
+
+    function closeTestModal() {
+      document.getElementById('test-modal').style.display = 'none';
+      document.getElementById('quiz-result').style.display = 'none';
+    }
+
+    function renderQuiz() {
+      const container = document.getElementById('quiz-content');
+      container.innerHTML = '';
+      document.getElementById('submitTestBtn').style.display = 'inline-block';
+
+      questionsData.forEach((q, idx) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '1.5rem';
+        div.innerHTML = `
+                <p style="font-weight:600; margin-bottom:0.5rem;">${idx + 1}. ${q.question}</p>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    ${q.options.map((opt, i) => `
+                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                            <input type="radio" name="q${idx}" value="${i}">
+                            ${opt}
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+        container.appendChild(div);
+      });
+    }
+
+    async function submitTest() {
+      const answers = [];
+      let allAnswered = true;
+      questionsData.forEach((q, idx) => {
+        const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+        if (!selected) allAnswered = false;
+        answers.push(selected ? parseInt(selected.value) : -1);
+      });
+
+      if (!allAnswered) {
+        if (!confirm("You haven't answered all questions. Submit anyway?")) return;
+      }
+
+      try {
+        const res = await fetch(`/api/student/tests/${currentTestId}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers }),
+          credentials: 'include'
+        });
+        const data = await res.json();
+
+        const resultDiv = document.getElementById('quiz-result');
+        resultDiv.style.display = 'block';
+        document.getElementById('submitTestBtn').style.display = 'none';
+
+        if (data.passed) {
+          resultDiv.style.background = '#dcfce7';
+          resultDiv.style.color = '#166534';
+          resultDiv.innerHTML = `<h3>🎉 Passed!</h3><p>You scored ${data.score.toFixed(1)}% (${data.correct_answers}/${data.total_questions})</p>`;
+          // Trigger confetti or something?
+        } else {
+          resultDiv.style.background = '#fee2e2';
+          resultDiv.style.color = '#991b1b';
+          resultDiv.innerHTML = `<h3>❌ Try Again</h3><p>You scored ${data.score.toFixed(1)}% (${data.correct_answers}/${data.total_questions}). You need 60% to pass.</p>`;
+        }
+
+      } catch (e) { alert(e); }
+    }
+
+    checkTest();
+  </script>
+</body>
+
+</html>

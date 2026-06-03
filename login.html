@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in • Edurural</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body style="margin: 0; padding: 0;">
+  <div class="split-layout">
+    <!-- Left Side: Branding/Logo -->
+    <div class="split-left">
+      <div style="text-align: center;">
+        <img src="/static/logo.svg" alt="Edurural" style="height: 150px; width: auto;">
+      </div>
+      <div style="margin-top: auto; font-size: 0.875rem; color: var(--slate-400);">
+        &copy; 2026 Edurural. All rights reserved.
+      </div>
+    </div>
+
+    <!-- Right Side: Login Form -->
+    <div class="split-right">
+      <div class="login-card-wrapper">
+        <div class="login-card">
+          <div class="mb-6" style="text-align: left;">
+            <h2 style="font-size: 2rem; color: var(--slate-800); font-weight: 700; margin-bottom: 0.5rem;">Hello!</h2>
+            <p style="color: var(--slate-500); font-size: 1rem;">Sign in to Get Started</p>
+          </div>
+
+          <div class="form-group">
+            <div style="position: relative;">
+              <i class="fa-regular fa-envelope"
+                style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 1rem;"></i>
+              <input id="email" type="email" class="form-control" placeholder="Email Address"
+                style="padding-left: 3rem; border-radius: 50px; height: 50px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="position: relative;">
+              <i class="fa-solid fa-lock"
+                style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 1rem;"></i>
+              <input id="password" type="password" class="form-control" placeholder="Password"
+                style="padding-left: 3rem; border-radius: 50px; height: 50px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="position: relative;">
+              <i class="fa-solid fa-user-tag"
+                style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 1rem;"></i>
+              <div
+                style="position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--slate-400);">
+                <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem;"></i>
+              </div>
+              <select id="role" class="form-control"
+                style="padding-left: 3rem; border-radius: 50px; height: 50px; appearance: none; cursor: pointer;">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="auth('login')" class="btn btn-primary btn-full mb-4"
+            style="border-radius: 50px; padding: 0.875rem; background-color: #006afe; font-size: 1rem; border: none; box-shadow: 0 4px 6px -1px rgba(0, 106, 254, 0.2);">
+            Login
+          </button>
+
+          <div class="text-center mb-6">
+            <a href="#" id="forgot" style="color: var(--slate-500); font-size: 0.9rem; text-decoration: none;">Forgot
+              Password?</a>
+          </div>
+
+          <div
+            style="margin-top: 1.5rem; text-align: center; border-top: 1px solid var(--slate-100); padding-top: 1.5rem;">
+            <button onclick="auth('register')" class="btn btn-secondary btn-full"
+              style="border-radius: 50px; border: 1px solid var(--slate-300); color: var(--slate-600);">Create
+              Account</button>
+          </div>
+
+          <div id="err" class="alert alert-danger mt-4"
+            style="color: var(--danger-600); font-size: 0.875rem; text-align: center; display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (location.protocol === 'file:') {
+      location.href = 'http://127.0.0.1:5000/login.html';
+    }
+    const API = "";
+
+    async function meRedirectIfLoggedIn() {
+      try {
+        const res = await fetch(`/me`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.user) {
+          window.location.href = '/index.html';
+        }
+      } catch { }
+    }
+
+    async function auth(path) {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role') ? document.getElementById('role').value : 'student';
+      const err = document.getElementById('err');
+
+      err.style.display = 'none';
+      if (!email || !password) {
+        err.innerText = 'Please enter both email and password';
+        err.style.display = 'block';
+        return;
+      }
+
+      const btn = document.querySelector(`button[onclick="auth('${path}')"]`);
+      const originalText = btn.innerText;
+      btn.innerText = 'Processing...';
+      btn.disabled = true;
+
+      try {
+        // DEBUG: Alert before fetch
+        // alert('Attempting ' + path + '...'); 
+
+        const res = await fetch(`${API}/${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(path === 'register' ? { email, password, role } : { email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Request failed');
+        }
+
+        // alert('Success! Redirecting...');
+        window.location.href = '/index.html';
+      } catch (e) {
+        // DEBUG: Alert on error
+        alert('Login Error: ' + e.message);
+
+        err.innerText = e.message;
+        err.style.display = 'block';
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      meRedirectIfLoggedIn();
+
+      const forgotBtn = document.getElementById('forgot');
+      if (forgotBtn) {
+        forgotBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value.trim();
+          if (!email) {
+            alert('Please enter your email address in the field above first.');
+            return;
+          }
+          try {
+            const res = await fetch('/password/forgot', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            alert(data.message || 'If an account exists, a reset link has been sent.');
+          } catch (e) {
+            alert('Error requesting password reset.');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

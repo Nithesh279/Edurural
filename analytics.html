@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom analytics • EDURURAL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 40px 16px;
+      background: radial-gradient(circle at top left, #e0f2fe, #f9fafb 45%, #eef2ff);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .subject-selector {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      color: #666;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #0ea5e9;
+    }
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #0ea5e9;
+      transition: width 0.3s;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: #0ea5e9;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="container">
+      <div class="header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="/static/logo.svg" alt="Logo" style="height:40px; width:auto;">
+          <div>
+            <h1 style="margin: 0; font-size:1.4rem;">Classroom analytics</h1>
+            <p style="margin: 4px 0 0 0; color: #6b7280; font-size:0.9rem;">Track student progress and how lessons are watched over time.</p>
+          </div>
+        </div>
+        <div>
+          <a href="/index.html" class="btn btn-secondary">← Back to Home</a>
+        </div>
+      </div>
+
+    <div class="subject-selector">
+      <label for="subjectSelect" style="display: block; margin-bottom: 8px; font-weight: 600;">Select Subject:</label>
+      <select id="subjectSelect">
+        <option value="">Loading subjects...</option>
+      </select>
+    </div>
+
+    <div id="loading" class="loading">Loading analytics...</div>
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="dashboard" style="display: none;">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Students</h3>
+          <div class="value" id="totalStudents">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total Videos</h3>
+          <div class="value" id="totalVideos">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Avg Completion</h3>
+          <div class="value" id="avgCompletion">0%</div>
+        </div>
+        <div class="stat-card">
+          <h3>Active Students</h3>
+          <div class="value" id="activeStudents">0</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <h2>Student Progress</h2>
+        <table id="studentTable">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Email</th>
+              <th>Videos Watched</th>
+              <th>Completed</th>
+              <th>Progress</th>
+              <th>Last Activity</th>
+              <th>Languages Used</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-container">
+        <h2>Video Performance</h2>
+        <table id="videoTable">
+          <thead>
+            <tr>
+              <th>Video Title</th>
+              <th>Students Watched</th>
+              <th>Avg Watch Duration</th>
+              <th>Completion Rate</th>
+            </tr>
+          </thead>
+          <tbody id="videoTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-container">
+        <h2>Language Usage Statistics</h2>
+        <table id="languageTable">
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Usage Count</th>
+            </tr>
+          </thead>
+          <tbody id="languageTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentSubjectId = null;
+
+    async function ensureLoggedIn() {
+      try {
+        const res = await fetch('/me', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.user || data.user.role !== 'teacher') {
+          window.location.href = '/index.html';
+          return false;
+        }
+        return true;
+      } catch {
+        window.location.href = '/index.html';
+        return false;
+      }
+    }
+
+    async function loadSubjects() {
+      try {
+        const res = await fetch('/subjects', { credentials: 'include' });
+        const data = await res.json();
+        const select = document.getElementById('subjectSelect');
+        select.innerHTML = '<option value="">Select a subject...</option>';
+        data.subjects.forEach(subject => {
+          const opt = document.createElement('option');
+          opt.value = subject.id;
+          opt.textContent = `${subject.name} (${subject.student_count} students, ${subject.video_count} videos)`;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        showError('Failed to load subjects: ' + e.message);
+      }
+    }
+
+    async function loadAnalytics(subjectId) {
+      if (!subjectId) {
+        document.getElementById('dashboard').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+
+      try {
+        const res = await fetch(`/analytics/subject/${subjectId}`, { credentials: 'include' });
+        if (!res.ok) {
+          throw new Error('Failed to load analytics');
+        }
+        const data = await res.json();
+
+        document.getElementById('totalStudents').textContent = data.overview.total_students;
+        document.getElementById('totalVideos').textContent = data.overview.total_videos;
+        
+        const avgCompletion = data.student_progress.length > 0
+          ? Math.round(data.student_progress.reduce((sum, s) => sum + s.completion_percentage, 0) / data.student_progress.length)
+          : 0;
+        document.getElementById('avgCompletion').textContent = avgCompletion + '%';
+        document.getElementById('activeStudents').textContent = data.student_progress.filter(s => s.last_activity).length;
+
+        const studentBody = document.getElementById('studentTableBody');
+        studentBody.innerHTML = '';
+        data.student_progress.forEach(student => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${student.username || student.email}</td>
+            <td>${student.email}</td>
+            <td>${student.videos_watched}/${student.total_videos}</td>
+            <td>${student.videos_completed}</td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${student.completion_percentage}%"></div>
+              </div>
+              ${student.completion_percentage}%
+            </td>
+            <td>${student.last_activity ? new Date(student.last_activity).toLocaleString() : 'Never'}</td>
+            <td>${student.languages_used.join(', ') || 'None'}</td>
+          `;
+          studentBody.appendChild(tr);
+        });
+
+        const videoBody = document.getElementById('videoTableBody');
+        videoBody.innerHTML = '';
+        data.video_stats.forEach(video => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${video.title || video.filename}</td>
+            <td>${video.students_watched}</td>
+            <td>${Math.round(video.avg_watch_duration)}s</td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${video.completion_rate}%"></div>
+              </div>
+              ${video.completion_rate.toFixed(1)}%
+            </td>
+          `;
+          videoBody.appendChild(tr);
+        });
+
+        const langBody = document.getElementById('languageTableBody');
+        langBody.innerHTML = '';
+        data.language_stats.forEach(lang => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${lang.language}</td>
+            <td>${lang.usage_count}</td>
+          `;
+          langBody.appendChild(tr);
+        });
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+      } catch (e) {
+        document.getElementById('loading').style.display = 'none';
+        showError('Failed to load analytics: ' + e.message);
+      }
+    }
+
+    function showError(msg) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
+
+    document.getElementById('subjectSelect').addEventListener('change', (e) => {
+      currentSubjectId = e.target.value;
+      if (currentSubjectId) {
+        loadAnalytics(currentSubjectId);
+      } else {
+        document.getElementById('dashboard').style.display = 'none';
+      }
+    });
+
+    (async () => {
+      if (await ensureLoggedIn()) {
+        await loadSubjects();
+      }
+    })();
+  </script>
+</body>
+</html>
+
+
+
+

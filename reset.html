@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset password • EDURURAL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 40px 16px;
+      background: radial-gradient(circle at top left, #e0f2fe, #f9fafb 45%, #eef2ff);
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      width: 95%;
+      max-width: 460px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      padding: 22px;
+    }
+
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.4rem;
+      font-weight: 650;
+      color: #111827;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 10px 0 6px;
+      color: #374151;
+      font-size: 0.95rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    input:focus {
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 2px rgba(14,165,233,0.16);
+    }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 999px;
+      background: #0ea5e9;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.98rem;
+    }
+
+    button:hover {
+      background: #0284c7;
+    }
+
+    .msg {
+      margin-top: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:12px;">
+      <img src="/static/logo.svg" alt="Logo" style="height:48px; width:auto;">
+    </div>
+    <h2>Set a new password</h2>
+    <label for="password">New password</label>
+    <input id="password" type="password" placeholder="Enter new password"/>
+    <button id="submit">Update password</button>
+    <div id="msg" class="msg"></div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token') || '';
+    document.getElementById('submit').addEventListener('click', async () => {
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+      msg.innerText = '';
+      if (!password) { msg.innerText = 'Enter a password'; return; }
+      const res = await fetch('/password/reset', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ token, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { msg.innerText = data.error || 'Failed'; return; }
+      msg.innerText = 'Password updated. You can close this tab and sign in.';
+    });
+  </script>
+</body>
+</html>
+
+
+
+

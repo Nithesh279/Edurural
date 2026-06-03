@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses • Edurural</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/static/logo.svg" alt="Edurural" style="height: 32px; width: auto; display: block;">
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item" onclick="window.location.href='/index.html'">
+                    <span>▶️</span> <span>Library</span>
+                </div>
+                <div class="nav-item active">
+                    <span>🎓</span> <span>Courses</span>
+                </div>
+                <div class="nav-item" id="nav-teacher-upload" style="display:none;"
+                    onclick="window.location.href='/index.html?section=upload'">
+                    <span>📤</span> <span>Upload Content</span>
+                </div>
+                <div class="nav-item" id="nav-analytics" style="display:none;"
+                    onclick="window.location.href='/analytics.html'">
+                    <span>📊</span> <span>Analytics</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Loading...</div>
+                        <div class="user-role" id="userRole">...</div>
+                        <div style="font-size: 0.8rem; color: #f59e0b; display:none;" id="userStreak">🔥 0 Days</div>
+                    </div>
+                    <button onclick="openSettings()" class="btn-icon"
+                        style="background:none; border:none; cursor:pointer; color:var(--slate-400);">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+                <button onclick="logout()" class="btn btn-secondary btn-full mt-4"
+                    style="font-size: 0.8rem; padding: 0.5rem;">Sign out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="header-actions">
+                <div>
+                    <h1>My Courses</h1>
+                    <p>Manage your learning and teaching activities.</p>
+                </div>
+            </div>
+
+            <!-- Student View -->
+            <div id="student-view" style="display:none;">
+                <div class="card mb-8">
+                    <h3>Available Subjects</h3>
+                    <p class="text-sm text-slate-500 mb-4">Select a subject to add it to your library.</p>
+                    <div class="flex gap-2" style="max-width: 500px;">
+                        <select id="availableSubjects" class="form-control">
+                            <option value="">Loading subjects...</option>
+                        </select>
+                        <button id="enrollSelectedBtn" class="btn btn-success"
+                            style="white-space:nowrap;">Enroll</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="mb-4">Enrolled Subjects</h3>
+                    <div id="enrollmentList" class="grid"
+                        style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <p class="text-slate-500">Loading your courses...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teacher View -->
+            <div id="teacher-view" style="display:none;">
+                <div id="teacher-subjects-section">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3>My Teaching Subjects</h3>
+                        <button onclick="createSubject()" class="btn btn-primary">+ Create Subject</button>
+                    </div>
+                    <div id="teacherSubjectsList" class="grid"
+                        style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                        <!-- Injected -->
+                    </div>
+                </div>
+
+                <div id="teacher-videos-section" style="display:none;">
+                    <button onclick="showTeacherSubjects()" class="btn btn-secondary mb-4">← Back to Subjects</button>
+                    <h3 class="mb-4">Videos in <span id="currentSubjectName"></span></h3>
+                    <div class="card">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #eee;">
+                                    <th class="p-3 text-left">Video</th>
+                                    <th class="p-3 text-left">Created</th>
+                                    <th class="p-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherVideosList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="modal"
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                <div class="card"
+                    style="width: 100%; max-width: 500px; position:relative; max-height:90vh; overflow-y:auto;">
+                    <button onclick="closeSettings()"
+                        style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+                    <h3 class="mb-4">Profile Settings</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" id="settingsDisplayName" class="form-control" placeholder="Your Name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bio</label>
+                        <textarea id="settingsBio" class="form-control" placeholder="Tell us about yourself..."
+                            rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" id="settingsPhone" class="form-control" placeholder="+91 98765 43210">
+                    </div>
+
+                    <hr class="my-4" style="border-top: 1px solid var(--slate-200);">
+
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="settingsNewPassword" class="form-control"
+                            placeholder="Leave blank to keep current">
+                    </div>
+
+                    <button onclick="saveSettings()" class="btn btn-primary btn-full">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- Test Editor Modal -->
+            <div id="test-modal" class="modal"
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+                <div class="card"
+                    style="width: 90%; max-width: 800px; max-height:90vh; overflow-y:auto; position: relative;">
+                    <button onclick="closeTestModal()"
+                        style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+                    <h3 class="mb-4">Manage Test for Video</h3>
+                    <div id="questions-container"></div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="addQuestion()" class="btn btn-secondary">+ Add Question</button>
+                        <button onclick="saveTest()" class="btn btn-primary">Save Test</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        if (location.protocol === 'file:') location.href = 'http://127.0.0.1:5000/courses.html';
+        let currentUser = null;
+        let currentTestVideoId = null;
+
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        async function saveSettings() {
+            const password = document.getElementById('settingsNewPassword').value;
+            if (!password) {
+                alert("Please enter a new password to update.");
+                return;
+            }
+
+            try {
+                const res = await fetch('/update-profile', { title: 'Update Profile', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }), credentials: 'include' });
+                const data = await res.json();
+                alert(data.message || data.error);
+                if (res.ok) closeSettings();
+            } catch (e) { alert(e); }
+        }
+
+        async function logout() {
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login.html';
+        }
+
+        async function ensureLoggedIn() {
+            try {
+                const res = await fetch(`/me`, { credentials: 'include' });
+                const data = await res.json();
+                currentUser = data.user;
+
+                if (!currentUser) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                document.getElementById('userName').innerText = currentUser.email.split('@')[0];
+                document.getElementById('userRole').innerText = currentUser.role;
+                document.getElementById('userAvatar').innerText = currentUser.email.charAt(0).toUpperCase();
+
+                if (currentUser.streak !== undefined) {
+                    const streakEl = document.getElementById('userStreak');
+                    streakEl.style.display = 'block';
+                    let badge = '';
+                    if (currentUser.streak >= 30) badge = ' 🎖️ Monthly Master';
+                    else if (currentUser.streak >= 7) badge = ' 🏆 Week Warrior';
+                    streakEl.innerText = `🔥 ${currentUser.streak} Day Streak${badge}`;
+                }
+
+                if (currentUser.role === 'teacher') {
+                    document.getElementById('nav-teacher-upload').style.display = 'flex';
+                    document.getElementById('nav-analytics').style.display = 'flex';
+                    document.getElementById('teacher-view').style.display = 'block';
+                    loadTeacherSubjects();
+                } else {
+                    document.getElementById('student-view').style.display = 'block';
+                    await loadSubjectsForStudent();
+                    await loadEnrollments();
+                }
+
+            } catch {
+                window.location.href = '/login.html';
+            }
+        }
+
+        /* Student Functions */
+        async function loadSubjectsForStudent() {
+            try {
+                const res = await fetch('/subjects', { credentials: 'include' });
+                const data = await res.json();
+                const select = document.getElementById('availableSubjects');
+                select.innerHTML = '<option value="">Browse subjects...</option>';
+                (data.subjects || []).forEach(subject => {
+                    if (subject.enrolled) return;
+                    const opt = document.createElement('option');
+                    opt.value = subject.id;
+                    opt.textContent = subject.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadEnrollments() {
+            try {
+                const res = await fetch('/subjects/my-enrollments', { credentials: 'include' });
+                const data = await res.json();
+                const list = document.getElementById('enrollmentList');
+                list.innerHTML = '';
+
+                if (data.enrollments.length > 0) {
+                    data.enrollments.forEach(subject => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="mb-0 text-lg">${subject.name}</h4>
+                    <span class="tag tag-blue">Active</span>
+                </div>
+                <p class="text-sm text-slate-500 mb-4">${subject.description || 'No description available.'}</p>
+                <div class="flex justify-between items-center mt-auto">
+                    <span class="text-xs text-slate-400">Enrolled: ${new Date(subject.enrolled_at).toLocaleDateString()}</span>
+                    <button onclick="unenrollSubject(${subject.subject_id}, '${subject.name.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" style="font-size:0.8rem; padding:0.3rem 0.8rem;">Unenroll</button>
+                </div>
+            `;
+                        list.appendChild(card);
+                    });
+                } else {
+                    list.innerHTML = '<div class="card" style="grid-column: 1/-1; text-align:center; padding:3rem;"><p class="mb-0 text-slate-500">You are not enrolled in any courses yet.</p></div>';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function enrollSubject(subjectId) {
+            if (!subjectId) return;
+            try {
+                const res = await fetch(`/subjects/${subjectId}/enroll`, { method: 'POST', credentials: 'include' });
+                if (res.ok) {
+                    await loadEnrollments();
+                    await loadSubjectsForStudent();
+                } else {
+                    alert('Failed to enroll');
+                }
+            } catch (e) { alert(e.message); }
+        }
+
+        document.getElementById('enrollSelectedBtn').addEventListener('click', () => {
+            const val = document.getElementById('availableSubjects').value;
+            if (val) enrollSubject(val);
+            else alert("Please select a subject first.");
+        });
+
+        async function unenrollSubject(id, name) {
+            if (!confirm(`Are you sure you want to unenroll from "${name}"?`)) return;
+            try {
+                const res = await fetch(`/subjects/${id}/enroll`, { method: 'DELETE', credentials: 'include' });
+                if (res.ok) {
+                    await loadEnrollments();
+                    await loadSubjectsForStudent();
+                }
+            } catch (e) { alert(e.message); }
+        }
+
+        /* Teacher Functions */
+        async function loadTeacherSubjects() {
+            try {
+                const res = await fetch('/subjects', { credentials: 'include' });
+                const data = await res.json();
+                const list = document.getElementById('teacherSubjectsList');
+                list.innerHTML = '';
+                if (data.subjects) {
+                    data.subjects.forEach(sub => {
+                        const div = document.createElement('div');
+                        div.className = 'card cursor-pointer hover:shadow-lg transition';
+                        div.onclick = () => loadTeacherVideos(sub.id, sub.name);
+                        div.innerHTML = `
+                            <h4>${sub.name}</h4>
+                            <p class="text-sm text-slate-500">${sub.video_count} videos • ${sub.student_count} students</p>
+                        `;
+                        list.appendChild(div);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function createSubject() {
+            const name = prompt("Enter subject name:");
+            if (!name) return;
+            try {
+                await fetch('/subjects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name }),
+                    credentials: 'include'
+                });
+                loadTeacherSubjects();
+            } catch (e) { alert(e); }
+        }
+
+        function showTeacherSubjects() {
+            document.getElementById('teacher-subjects-section').style.display = 'block';
+            document.getElementById('teacher-videos-section').style.display = 'none';
+        }
+
+        async function loadTeacherVideos(subjectId, subjectName) {
+            document.getElementById('teacher-subjects-section').style.display = 'none';
+            document.getElementById('teacher-videos-section').style.display = 'block';
+            document.getElementById('currentSubjectName').innerText = subjectName;
+
+            const tbody = document.getElementById('teacherVideosList');
+            tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+
+            try {
+                const res = await fetch(`/subjects/${subjectId}`, { credentials: 'include' });
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if (data.videos) {
+                    data.videos.forEach(v => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="p-3">${v.title || v.filename}</td>
+                            <td class="p-3 text-sm text-slate-500">${new Date(v.created_at).toLocaleDateString()}</td>
+                            <td class="p-3">
+                                <button onclick="openTestModal(${v.id})" class="btn btn-outline-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Manage Test</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        /* Test Editor Logic */
+        async function openTestModal(videoId) {
+            currentTestVideoId = videoId;
+            document.getElementById('test-modal').style.display = 'flex';
+            document.getElementById('questions-container').innerHTML = 'Loading...';
+
+            try {
+                const res = await fetch(`/api/teacher/tests/${videoId}`, { credentials: 'include' });
+                const data = await res.json();
+                document.getElementById('questions-container').innerHTML = '';
+
+                if (data.questions && data.questions.length > 0) {
+                    data.questions.forEach(q => addQuestionLine(q));
+                } else {
+                    addQuestionLine(); // Add one empty
+                }
+            } catch (e) {
+                document.getElementById('questions-container').innerHTML = 'Error loading test.';
+            }
+        }
+
+        function closeTestModal() {
+            document.getElementById('test-modal').style.display = 'none';
+        }
+
+        function addQuestion() {
+            addQuestionLine();
+        }
+
+        function addQuestionLine(data = null) {
+            const container = document.getElementById('questions-container');
+            const idx = container.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'card bg-slate-50 mb-4';
+            div.style.padding = '1rem';
+
+            const qText = data ? data.question : '';
+            const opts = data ? data.options : ['', '', '', ''];
+            const ans = data ? data.correctAnswer : 0;
+
+            div.innerHTML = `
+                <div class="mb-2">
+                    <label class="form-label">Question ${idx}</label>
+                    <input type="text" class="form-control q-text" value="${qText}" placeholder="Enter question text">
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <input type="text" class="form-control q-opt" value="${opts[0]}" placeholder="Option 1">
+                    <input type="text" class="form-control q-opt" value="${opts[1]}" placeholder="Option 2">
+                    <input type="text" class="form-control q-opt" value="${opts[2]}" placeholder="Option 3">
+                    <input type="text" class="form-control q-opt" value="${opts[3]}" placeholder="Option 4">
+                </div>
+                <div>
+                    <label class="form-label">Correct Option (1-4)</label>
+                    <select class="form-control q-ans">
+                        <option value="0" ${ans == 0 ? 'selected' : ''}>Option 1</option>
+                        <option value="1" ${ans == 1 ? 'selected' : ''}>Option 2</option>
+                        <option value="2" ${ans == 2 ? 'selected' : ''}>Option 3</option>
+                        <option value="3" ${ans == 3 ? 'selected' : ''}>Option 4</option>
+                    </select>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-red-500 text-sm mt-2 hover:underline">Remove Question</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function saveTest() {
+            if (!currentTestVideoId) return;
+            const container = document.getElementById('questions-container');
+            const questions = [];
+
+            for (let card of container.children) {
+                const qText = card.querySelector('.q-text').value.trim();
+                if (!qText) continue;
+
+                const opts = Array.from(card.querySelectorAll('.q-opt')).map(i => i.value.trim());
+                const ans = card.querySelector('.q-ans').value;
+
+                questions.push({
+                    question: qText,
+                    options: opts,
+                    correctAnswer: ans
+                });
+            }
+
+            if (questions.length === 0) {
+                if (!confirm("This will save an empty test (delete existing). Continue?")) return;
+            }
+
+            try {
+                const res = await fetch('/api/teacher/tests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_id: currentTestVideoId, questions }),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Test saved successfully!');
+                    closeTestModal();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) { alert(e.message); }
+        }
+
+        ensureLoggedIn();
+    </script>
+</body>
+
+</html>

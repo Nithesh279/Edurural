@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard • Edurural</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .markdown-body { font-size: 0.9rem; line-height: 1.5; color: var(--slate-700); }
+    .markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: 0.85rem; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--slate-200); padding: 0.5rem; text-align: left; }
+    .markdown-body th { background: var(--slate-50); font-weight: bold; }
+    .markdown-body p { margin-bottom: 0.75rem; }
+    .markdown-body p:last-child { margin-bottom: 0; }
+    .markdown-body pre { background: var(--slate-100); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
+    .markdown-body code { background: var(--slate-100); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+    .markdown-body pre code { background: transparent; padding: 0; }
+    .markdown-body ul, .markdown-body ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+    .markdown-body h3, .markdown-body h4 { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: bold; }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="/static/logo.svg" alt="Edurural" style="height: 32px; width: auto; display: block;">
+      </div>
+      <nav class="nav-menu">
+        <div class="nav-item active" onclick="window.location.reload()">
+          <span>▶️</span> <span>Library</span>
+        </div>
+        <div class="nav-item" id="nav-courses" onclick="window.location.href='/courses.html'">
+          <span>🎓</span> <span>Courses</span>
+        </div>
+        <div class="nav-item" id="nav-teacher-upload" style="display:none;" onclick="showSection('upload')">
+          <span>📤</span> <span>Upload Content</span>
+        </div>
+        <div class="nav-item" id="nav-analytics" style="display:none;" onclick="window.location.href='/analytics.html'">
+          <span>📊</span> <span>Analytics</span>
+        </div>
+        <div class="nav-item" id="nav-questions" style="display:none;" onclick="showSection('questions')">
+          <span>💬</span> <span>Questions</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="userAvatar">U</div>
+          <div class="user-info">
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-role" id="userRole">...</div>
+            <div style="font-size: 0.8rem; color: #f59e0b; display:none;" id="userStreak">🔥 0 Days</div>
+          </div>
+          <button onclick="openSettings()" class="btn-icon"
+            style="background:none; border:none; cursor:pointer; color:var(--slate-400);">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        </div>
+        <button onclick="logout()" class="btn btn-secondary btn-full mt-4"
+          style="font-size: 0.8rem; padding: 0.5rem;">Sign out</button>
+      </div>
+    </aside>
+    <main class="main-content">
+      <div class="header-actions">
+        <div>
+          <h1>Video Lessons</h1>
+          <p>Watch your lessons and track your progress.</p>
+        </div>
+      </div>
+      <div id="view-library">
+        <div class="card mb-8">
+          <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: start; gap: 2rem;">
+            <div class="form-group mb-0">
+              <label class="form-label">Select Video</label>
+              <select id="videoSelect" class="form-control" style="border-radius: 50px;">
+                <option disabled selected>Choose a video...</option>
+              </select>
+            </div>
+            <div class="form-group mb-0">
+              <label class="form-label">Learning Language</label>
+              <select id="language" class="form-control" style="border-radius: 50px;">
+                <option disabled selected>Select language...</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Telugu">Telugu</option>
+                <option value="Malayalam">Malayalam</option>
+                <option value="Kannada">Kannada</option>
+                <option value="Gujarati">Gujarati</option>
+                <option value="Marathi">Marathi</option>
+                <option value="Bengali">Bengali</option>
+                <option value="Punjabi">Punjabi</option>
+                <option value="Urdu">Urdu</option>
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Italian">Italian</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Korean">Korean</option>
+                <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Russian">Russian</option>
+              </select>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 1.5rem;">
+            <button id="translateBtn" class="btn btn-primary mb-0"
+              style="padding: 0.75rem 2.5rem; border-radius: 50px; font-size: 1rem;">Start Lesson</button>
+          </div>
+        </div>
+        <div id="player-area" style="display:none;">
+          <div id="output" class="mb-4" style="font-weight: 500;"></div>
+          <div class="video-player-container">
+            <video id="translatedVideo" controls autoplay style="width: 100%; display: block;"></video>
+            <div style="margin-top: 10px; text-align: right;">
+            </div>
+          </div>
+
+          <div class="grid mt-8 gap-4" style="grid-template-columns: 1fr 1fr; align-items: start;">
+            <!-- AI Chat Section -->
+            <div class="card bg-slate-50">
+              <h4 class="mb-4">🤖 AI Tutor</h4>
+              <div id="chat-history" class="chat-history mb-4"
+                style="height: 300px; overflow-y: auto; background: white; padding: 1rem; border-radius: 8px; border: 1px solid var(--slate-200);">
+                <div class="text-sm text-slate-500 text-center">Ask me anything about this video!</div>
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="chatInput" class="form-control mb-0" placeholder="Type your question..."
+                  onkeypress="if(event.key==='Enter') askAI()">
+                <button onclick="askAI()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Ask</button>
+              </div>
+            </div>
+
+            <!-- Q&A Section -->
+            <div class="card">
+              <h4 class="mb-4">💬 Class Discussion</h4>
+              <div id="comments-list" class="mb-4"
+                style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Comments injected here -->
+                <div class="text-center text-slate-400">No questions yet. Be the first!</div>
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="commentInput" class="form-control mb-0" placeholder="Ask the teacher..."
+                  onkeypress="if(event.key==='Enter') postComment()">
+                <button onclick="postComment()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Post</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="view-questions" style="display:none;">
+        <h3 class="mb-4">Student Questions</h3>
+        <div class="card">
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse: collapse; min-width: 600px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--slate-100);">
+                  <th class="text-left p-3 text-sm text-slate-500">Student</th>
+                  <th class="text-left p-3 text-sm text-slate-500">Lesson</th>
+                  <th class="text-left p-3 text-sm text-slate-500">Question</th>
+                  <th class="text-left p-3 text-sm text-slate-500">Status</th>
+                  <th class="text-left p-3 text-sm text-slate-500">Action</th>
+                </tr>
+              </thead>
+              <tbody id="questions-table-body">
+                <!-- Questions injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-upload" style="display:none;">
+        <div class="card">
+          <h3 class="mb-4">Upload New Content</h3>
+          <div class="upload-zone mb-8">
+            <input type="file" id="contentVideo" accept="video/*" class="hidden"
+              onchange="document.getElementById('fileName').innerText = this.files[0]?.name || 'No file selected'">
+            <button onclick="document.getElementById('contentVideo').click()" class="btn btn-secondary mb-2">Choose
+              Video File</button>
+            <p id="fileName" class="text-sm text-slate-500">No file selected</p>
+          </div>
+          <div class="grid">
+            <div class="form-group">
+              <label class="form-label">Video Title</label>
+              <input type="text" id="contentTitle" class="form-control" placeholder="eg: Physics" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subject</label>
+              <div class="flex gap-2">
+                <select id="subjectSelectUpload" class="form-control">
+                  <option value="">Select Subject...</option>
+                </select>
+                <button id="createSubjectBtn" class="btn btn-secondary" style="white-space: nowrap;">+ New</button>
+              </div>
+            </div>
+          </div>
+
+          <button id="uploadContentBtn" class="btn btn-primary mt-4">Upload and Transcribe</button>
+          <div id="uploadOutput" class="mt-4 text-sm"></div>
+        </div>
+        <div class="mt-8">
+          <h4>Your Subjects</h4>
+          <div id="teacherSubjectRoster" class="grid mt-4"></div>
+        </div>
+      </div>
+
+
+      <!-- Settings Modal -->
+      <div id="settings-modal" class="modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="card" style="width: 100%; max-width: 400px; position:relative;">
+          <button onclick="closeSettings()"
+            style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+          <h3 class="mb-4">Profile Settings</h3>
+
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" id="settingsNewPassword" class="form-control"
+              placeholder="Leave blank to keep current">
+          </div>
+
+          <button onclick="saveSettings()" class="btn btn-primary btn-full">Save Changes</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <script>
+    if (location.protocol === 'file:') location.href = 'http://127.0.0.1:5000/index.html';
+    const API = "";
+    let currentUser = null;
+    let activeVideoId = null;
+    let watchStartTime = 0;
+    let totalWatchDuration = 0;
+    let lastUpdateTime = Date.now();
+    let updateInterval = null;
+
+    async function updateWatchHistory() {
+      if (!activeVideoId) return;
+      const video = document.getElementById('translatedVideo');
+      const currentTime = video.currentTime || 0;
+      const duration = video.duration || 0;
+      const now = Date.now();
+
+      // Only count time if playing
+      if (video.paused && !updateInterval) {
+        // just update without adding time
+      } else {
+        const elapsed = (now - lastUpdateTime) / 1000;
+        totalWatchDuration += elapsed;
+      }
+      lastUpdateTime = now;
+
+      const completed = duration > 0 && currentTime >= duration * 0.9;
+      const lang = document.getElementById('language').value || 'English';
+
+      try {
+        const res = await fetch('/watch-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            video_id: parseInt(activeVideoId),
+            watch_duration: totalWatchDuration,
+            total_duration: duration,
+            language_used: lang,
+            completed: completed
+          })
+        });
+        // Check for streak update in response if desired
+      } catch (e) {
+        console.error('Failed to update watch history:', e);
+      }
+    }
+
+    function toggleNotesMenu() {
+      if (!activeVideoId) {
+        alert("Please start a lesson first.");
+        return;
+      }
+      const langElement = document.getElementById('language');
+      const lang = langElement ? langElement.value : 'English';
+      if (!lang || lang.toLowerCase() === 'english') {
+          executeDownload('English');
+          return;
+      }
+      const dd = document.getElementById("notesDropdown");
+      if (dd) {
+        dd.style.display = dd.style.display === 'none' ? 'flex' : 'none';
+      }
+    }
+
+    function executeDownload(targetLang) {
+      if (!activeVideoId) return;
+      window.open(`/download_notes/${activeVideoId}?lang=${encodeURIComponent(targetLang)}`, '_blank');
+      const dd = document.getElementById("notesDropdown");
+      if (dd) dd.style.display = 'none';
+    }
+
+    function setupVideoTracking() {
+      const video = document.getElementById('translatedVideo');
+
+      video.addEventListener('play', () => {
+        watchStartTime = Date.now();
+        lastUpdateTime = watchStartTime;
+        updateInterval = setInterval(updateWatchHistory, 5000);
+      });
+
+      video.addEventListener('pause', () => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
+        updateWatchHistory();
+      });
+
+      video.addEventListener('ended', () => {
+        if (updateInterval) {
+          clearInterval(updateInterval);
+          updateInterval = null;
+        }
+        updateWatchHistory();
+      });
+
+      // No timeupdate needed as interval handles it, but maybe good for redundancy
+    }
+
+    // Call setup once
+    setupVideoTracking();
+
+    function showSection(sectionId) {
+      document.getElementById('view-library').style.display = sectionId === 'library' ? 'block' : 'none';
+      document.getElementById('view-upload').style.display = sectionId === 'upload' ? 'block' : 'none';
+      document.getElementById('view-questions').style.display = sectionId === 'questions' ? 'block' : 'none';
+
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      if (sectionId === 'library') document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+      if (sectionId === 'upload') document.getElementById('nav-teacher-upload').classList.add('active');
+      if (sectionId === 'questions') {
+        document.getElementById('nav-questions').classList.add('active');
+        loadAllQuestions();
+      }
+
+      // Update Header
+      const headerTitle = document.querySelector('.header-actions h1');
+      const headerDesc = document.querySelector('.header-actions p');
+
+      if (sectionId === 'library') {
+        headerTitle.innerText = 'Video Lessons';
+        headerDesc.innerText = 'Watch your lessons and track your progress.';
+      } else if (sectionId === 'upload') {
+        headerTitle.innerText = 'Upload Content';
+        headerDesc.innerText = 'Upload new video lessons for your students.';
+      } else if (sectionId === 'questions') {
+        headerTitle.innerText = 'Student Questions';
+        headerDesc.innerText = 'Answer questions from your students.';
+      }
+    }
+    function openSettings() {
+      if (currentUser) {
+        document.getElementById('settingsDisplayName').value = currentUser.display_name || '';
+        document.getElementById('settingsBio').value = currentUser.bio || '';
+        document.getElementById('settingsPhone').value = currentUser.phone || '';
+      }
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    async function saveSettings() {
+      const password = document.getElementById('settingsNewPassword').value;
+      const display_name = document.getElementById('settingsDisplayName').value;
+      const bio = document.getElementById('settingsBio').value;
+      const phone = document.getElementById('settingsPhone').value;
+
+      try {
+        const res = await fetch('/update-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, display_name, bio, phone }),
+          credentials: 'include'
+        });
+        const data = await res.json();
+        alert(data.message || data.error);
+        if (res.ok) {
+          closeSettings();
+          window.location.reload();
+        }
+      } catch (e) { alert(e); }
+    }
+    async function logout() {
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+    }
+    async function ensureLoggedIn() {
+      try {
+        const res = await fetch(`/me`, { credentials: 'include' });
+        const data = await res.json();
+        currentUser = data.user;
+        if (!currentUser) {
+          window.location.href = '/login.html';
+          return;
+        }
+        document.getElementById('userName').innerText = currentUser.email.split('@')[0];
+        document.getElementById('userRole').innerText = currentUser.role;
+        document.getElementById('userAvatar').innerText = currentUser.email.charAt(0).toUpperCase();
+
+        if (currentUser.streak !== undefined) {
+          const streakEl = document.getElementById('userStreak');
+          streakEl.style.display = 'block';
+          let badge = '';
+          if (currentUser.streak >= 30) badge = ' 🎖️ Monthly Master';
+          else if (currentUser.streak >= 7) badge = ' 🏆 Week Warrior';
+          streakEl.innerText = `🔥 ${currentUser.streak} Day Streak${badge}`;
+        }
+
+        if (currentUser.role === 'teacher') {
+          document.getElementById('nav-teacher-upload').style.display = 'flex';
+
+          document.getElementById('nav-analytics').style.display = 'flex';
+          document.getElementById('nav-questions').style.display = 'flex';
+          document.getElementById('nav-courses').style.display = 'none';
+          await loadSubjectsForTeacher();
+        }
+
+        await loadLibrary();
+
+      } catch {
+        window.location.href = '/login.html';
+      }
+    }
+    async function loadSubjectsForTeacher() {
+      try {
+        const res = await fetch('/subjects', { credentials: 'include' });
+        const data = await res.json();
+        const select = document.getElementById('subjectSelectUpload');
+        const rosterBox = document.getElementById('teacherSubjectRoster');
+        select.innerHTML = '<option value="">Select Subject (Optional)...</option>';
+        rosterBox.innerHTML = '';
+        if (data.subjects && data.subjects.length > 0) {
+          data.subjects.forEach(subject => {
+            const opt = document.createElement('option');
+            opt.value = subject.id;
+            opt.textContent = `${subject.name}`;
+            select.appendChild(opt);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="mb-0">${subject.name}</h4>
+                                <button onclick="deleteSubject(${subject.id}, '${subject.name.replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+                            </div>
+                            <p class="text-sm mb-0">${subject.video_count || 0} videos</p>
+                            <small>${(subject.students || []).length} students enrolled</small>
+                        `;
+            rosterBox.appendChild(card);
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    async function deleteSubject(subjectId, subjectName) {
+      if (!confirm(`Delete subject "${subjectName}"?`)) return;
+      try {
+        await fetch(`/subjects/${subjectId}`, { method: 'DELETE', credentials: 'include' });
+        await loadSubjectsForTeacher();
+        await loadLibrary();
+      } catch (e) { alert(e.message); }
+    }
+    document.getElementById('uploadContentBtn').addEventListener('click', async () => {
+      const title = document.getElementById('contentTitle').value.trim();
+      const video = document.getElementById('contentVideo').files[0];
+      const subjectId = document.getElementById('subjectSelectUpload').value;
+      const output = document.getElementById("uploadOutput");
+      if (!title || !video) {
+        output.innerText = '⚠️ Please enter a title and select a video file.';
+        return;
+      }
+      const btn = document.getElementById('uploadContentBtn');
+      const originalText = btn.innerText;
+      btn.innerText = 'Uploading...';
+      btn.disabled = true;
+      try {
+        const formData = new FormData();
+        formData.append('video', video);
+        formData.append('title', title);
+        if (subjectId) formData.append('subject_id', subjectId);
+        const res = await fetch('/upload-content', { method: 'POST', body: formData, credentials: 'include' });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Upload failed');
+        output.innerHTML = `<span style="color:var(--secondary-600)">✅ ${result.message || 'Content uploaded successfully!'}</span>`;
+        document.getElementById('contentTitle').value = '';
+        document.getElementById('contentVideo').value = '';
+        document.getElementById('fileName').innerText = 'No file selected';
+        setTimeout(() => output.innerText = '', 5000);
+        await loadLibrary();
+        await loadSubjectsForTeacher();
+      } catch (e) {
+        output.innerText = '❌ Error: ' + e.message;
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+    document.getElementById('createSubjectBtn').addEventListener('click', async () => {
+      const name = prompt('Enter subject name:');
+      if (!name) return;
+      try {
+        const res = await fetch('/subjects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ name, description: '' })
+        });
+        if (res.ok) {
+          await loadSubjectsForTeacher();
+        } else {
+          alert('Failed to create subject');
+        }
+      } catch (e) { alert(e.message); }
+    });
+    async function loadLibrary(subjectId = null) {
+      try {
+        const url = subjectId ? `/content?subject_id=${subjectId}` : '/content';
+        const res = await fetch(url, { credentials: 'include' });
+        const data = await res.json();
+        const select = document.getElementById('videoSelect');
+        select.innerHTML = '<option disabled selected>Choose a video...</option>';
+        if (data.items && data.items.length > 0) {
+          data.items.forEach(item => {
+            const value = `${item.source || 'content'}|${item.filename}|${item.id || ''}`;
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = `${item.title || item.filename}`;
+            select.appendChild(opt);
+          });
+        } else {
+          const opt = document.createElement('option');
+          opt.disabled = true;
+          opt.textContent = 'No videos available';
+          select.appendChild(opt);
+        }
+      } catch (e) { console.error(e); }
+    }
+    document.getElementById('translateBtn').addEventListener('click', async () => {
+      const combined = document.getElementById('videoSelect').value;
+      const language = document.getElementById('language').value;
+      const output = document.getElementById('output');
+      const playerArea = document.getElementById('player-area');
+      const video = document.getElementById('translatedVideo');
+      if (!combined || combined.indexOf('|') === -1 || !language) {
+        alert('Please select both a video and a language.');
+        return;
+      }
+      const [source, filename, videoId] = combined.split('|');
+      activeVideoId = videoId; // Set current video ID
+      playerArea.style.display = 'block';
+      output.innerHTML = 'Wait... <span class="tag tag-blue">Initializing translation...</span>';
+      video.style.display = 'none';
+
+      // Load comments and chat history immediately if we have a video ID
+      if (activeVideoId) {
+        loadComments(activeVideoId);
+        loadChatHistory(activeVideoId);
+      }
+      output.innerHTML = 'Wait... <span class="tag tag-blue">Initializing translation...</span>';
+      video.style.display = 'none';
+      try {
+        const res = await fetch('/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ filename, language, source })
+        });
+        const result = await res.json();
+        if (!res.ok || result.error) throw new Error(result.error || 'Failed');
+
+        const jobId = result.job_id;
+        const poll = setInterval(async () => {
+          const sres = await fetch('/translate/status/' + jobId, { credentials: 'include' });
+          const status = await sres.json();
+          const pct = Math.floor(status.progress || 0);
+          output.innerHTML = `Processing... <div style="margin-top:8px; width:100%; height:6px; background:#e2e8f0; border-radius:4px;"><div style="width:${pct}%; height:100%; background:var(--primary-600); border-radius:4px; transition:width 0.5s;"></div></div><div class="text-sm text-slate-500 mt-2">${status.message || 'Processing'} (${pct}%)</div>`;
+
+          if (status.status === 'done' && status.url) {
+            clearInterval(poll);
+            output.innerHTML = `
+              <div class="flex items-center justify-between mb-2" style="flex-wrap: wrap; gap: 10px;">
+                <span style="color:var(--secondary-600); font-weight: bold;">✅ Ready to play in ${language}</span>
+                <div style="display:flex; gap:10px;">
+                  <div style="position:relative; display:inline-block;" id="notesContainer">
+                    <button onclick="toggleNotesMenu()" class="btn btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="fa-solid fa-file-pdf"></i> Study Notes
+                    </button>
+                    <div id="notesDropdown" style="display:none; position:absolute; top:100%; left:0; background:white; border:1px solid #e2e8f0; border-radius:8px; padding:4px; z-index:100; flex-direction:column; gap:2px; margin-bottom:8px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1); white-space:nowrap; text-align:left;">
+                      <div onclick="executeDownload('English')" style="color:#374151; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:4px; transition:background 0.2s; font-family:sans-serif;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">1. Download in English</div>
+                      <div onclick="executeDownload('${language}')" style="color:#374151; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:4px; transition:background 0.2s; font-family:sans-serif;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">2. Download in preferred language</div>
+                    </div>
+                  </div>
+                  <a href="${status.url}" download="Lesson_${filename}_${language}.mp4" class="btn btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                    <i class="fa-solid fa-download"></i> Download Offline
+                  </a>
+                </div>
+              </div>
+            `;
+            video.src = status.url;
+            video.style.display = 'block';
+            video.play();
+          }
+          if (status.status === 'error') {
+            clearInterval(poll);
+            output.innerHTML = `<span style="color:var(--danger-600)">❌ Error: ${status.message}</span>`;
+          }
+        }, 1000);
+      } catch (e) {
+        output.innerText = '❌ Error: ' + e.message;
+      }
+    });
+    async function askAI() {
+      const input = document.getElementById('chatInput');
+      const history = document.getElementById('chat-history');
+      const query = input.value.trim();
+      if (!query || !activeVideoId) return;
+
+      // Add User Message
+      history.innerHTML += `<div class="mb-2 text-right"><span style="background:var(--primary-100); padding:4px 8px; border-radius:12px 12px 0 12px; display:inline-block;">${query}</span></div>`;
+      input.value = '';
+      history.scrollTop = history.scrollHeight;
+
+      // Add Loading
+      const loadId = Date.now();
+      history.innerHTML += `<div id="${loadId}" class="mb-2 text-left"><span class="text-sm text-slate-400">Thinking...</span></div>`;
+
+      try {
+        const res = await fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_id: activeVideoId, query })
+        });
+        const data = await res.json();
+        let formattedAnswer = data.answer || "I don't know.";
+        try {
+            if (typeof marked !== 'undefined') {
+                formattedAnswer = marked.parse(formattedAnswer);
+            }
+        } catch(e) {}
+        document.getElementById(loadId).innerHTML = `<div class="mb-2 text-left"><div class="markdown-body" style="background:white; border:1px solid var(--slate-200); padding:16px; border-radius:12px 12px 12px 0; display:inline-block; max-width:90%; overflow-x:auto;">${formattedAnswer}</div></div>`;
+      } catch (e) {
+        console.error("AI Error:", e);
+        if (e.message && e.message.includes('Failed to fetch')) {
+          document.getElementById(loadId).innerText = "Error: Could not connect to the AI Tutor server. Please ensure app.py is running and you are viewing the page at http://127.0.0.1:5000.";
+        } else {
+          document.getElementById(loadId).innerText = "Error contacting AI: " + e.message;
+        }
+      }
+      history.scrollTop = history.scrollHeight;
+    }
+
+    async function loadChatHistory(videoId) {
+      const historyEl = document.getElementById('chat-history');
+      historyEl.innerHTML = '<div class="text-sm text-slate-500 text-center">Loading chat history...</div>';
+      
+      try {
+        const res = await fetch(`/api/ai-chat/history/${videoId}`, { credentials: 'include' });
+        const data = await res.json();
+        
+        historyEl.innerHTML = '';
+        if (data.history && data.history.length > 0) {
+          data.history.forEach(msg => {
+            let formattedContent = msg.content;
+            if (msg.role === 'model') {
+              try {
+                  if (typeof marked !== 'undefined') {
+                      formattedContent = marked.parse(formattedContent);
+                  }
+              } catch(e) {}
+              historyEl.innerHTML += `<div class="mb-2 text-left"><div class="markdown-body" style="background:white; border:1px solid var(--slate-200); padding:16px; border-radius:12px 12px 12px 0; display:inline-block; max-width:90%; overflow-x:auto;">${formattedContent}</div></div>`;
+            } else {
+              historyEl.innerHTML += `<div class="mb-2 text-right"><span style="background:var(--primary-100); padding:4px 8px; border-radius:12px 12px 0 12px; display:inline-block;">${formattedContent}</span></div>`;
+            }
+          });
+        } else {
+          historyEl.innerHTML = '<div class="text-sm text-slate-500 text-center">Ask me anything about this video!</div>';
+        }
+        historyEl.scrollTop = historyEl.scrollHeight;
+      } catch (e) {
+        historyEl.innerHTML = '<div class="text-sm text-danger-500 text-center">Failed to load chat history.</div>';
+      }
+    }
+
+    async function loadComments(videoId) {
+      if (!videoId) return;
+      activeVideoId = videoId;
+      const list = document.getElementById('comments-list');
+      list.innerHTML = '<div class="text-center text-slate-400">Loading discussion...</div>';
+
+      try {
+        const res = await fetch(`/api/comments/${videoId}`);
+        const data = await res.json();
+        list.innerHTML = '';
+
+        if (!data.comments || data.comments.length === 0) {
+          list.innerHTML = '<div class="text-center text-slate-400">No questions yet. Be the first!</div>';
+          return;
+        }
+
+        // Organize into threads (simple 1-level)
+        const map = {};
+        data.comments.forEach(c => {
+          c.children = [];
+          map[c.id] = c;
+        });
+        const roots = [];
+        data.comments.forEach(c => {
+          if (c.parent_id && map[c.parent_id]) {
+            map[c.parent_id].children.push(c);
+          } else {
+            roots.push(c);
+          }
+        });
+
+        roots.forEach(c => {
+          const isTeacher = c.user_role === 'teacher';
+          const badge = isTeacher ? '<span class="tag tag-blue" style="font-size:0.7em; margin-left:4px;">Teacher</span>' : '';
+          let html = `
+                <div class="comment p-3 bg-slate-50 rounded" style="border:1px solid var(--slate-200);">
+                    <div class="flex justify-between mb-1">
+                        <small class="font-bold text-slate-700">${c.user_name} ${badge}</small>
+                        <small class="text-slate-400">${new Date(c.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <p class="mb-2 text-sm">${c.text}</p>
+                `;
+
+          // Children
+          if (c.children.length > 0) {
+            html += `<div class="ml-4 mt-2 pl-3" style="border-left: 2px solid var(--slate-200);">`;
+            c.children.forEach(child => {
+              const tBadge = child.is_teacher_reply ? '<span class="tag tag-blue" style="font-size:0.7em; margin-left:4px;">Teacher</span>' : '';
+              html += `
+                            <div class="mb-2">
+                                <small class="font-bold text-slate-700">${child.user_name} ${tBadge}</small>
+                                <p class="text-sm mb-0">${child.text}</p>
+                            </div>
+                         `;
+            });
+            html += `</div>`;
+          }
+
+          // Reply button if teacher
+          if (currentUser && currentUser.role === 'teacher') {
+            html += `<button onclick="replyToComment(${c.id})" class="text-xs text-primary-600 mt-1 hover:underline">Reply</button>`;
+          }
+
+          html += `</div>`;
+          list.innerHTML += html;
+        });
+
+      } catch (e) {
+        console.error(e);
+        list.innerText = "Error loading comments.";
+      }
+    }
+
+    async function postComment() {
+      const txt = document.getElementById('commentInput').value.trim();
+      if (!txt || !activeVideoId) return;
+
+      try {
+        await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_id: activeVideoId, text: txt })
+        });
+        document.getElementById('commentInput').value = '';
+        loadComments(activeVideoId);
+      } catch (e) { alert(e); }
+    }
+
+    async function replyToComment(parentId) {
+      const reply = prompt("Enter your reply:");
+      if (!reply || !activeVideoId) return;
+
+      try {
+        await fetch('/api/comments/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_id: activeVideoId, parent_id: parentId, text: reply })
+        });
+        loadComments(activeVideoId);
+      } catch (e) { alert(e); }
+    }
+
+    async function loadAllQuestions() {
+      const tbody = document.getElementById('questions-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center p-3 text-slate-500">Loading questions...</td></tr>';
+
+      try {
+        const res = await fetch('/api/comments/all', { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.error) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center p-3 text-danger-600">Error: ${data.error}</td></tr>`;
+          return;
+        }
+
+        if (!data.questions || data.questions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center p-3 text-slate-500">No questions found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        data.questions.forEach(q => {
+          const statusHtml = q.is_answered
+            ? '<span class="tag tag-blue" style="background:#dcfce7; color:#166534;">Answered</span>'
+            : '<span class="tag" style="background:#fee2e2; color:#991b1b;">Pending</span>';
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--slate-100)';
+          tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="font-bold text-slate-700 text-sm">${q.user_name}</div>
+                        <div class="text-xs text-slate-400">${new Date(q.created_at).toLocaleDateString()}</div>
+                    </td>
+                    <td class="p-3 text-sm text-slate-600">${q.video_title}</td>
+                    <td class="p-3 text-sm text-slate-700" style="max-width:300px;">${q.text}</td>
+                    <td class="p-3">${statusHtml}</td>
+                    <td class="p-3">
+                        <button onclick="goToReply(${q.video_id})" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Reply</button>
+                    </td>
+                `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-3 text-danger-600">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function goToReply(videoId) {
+      // Switch to Library view
+      showSection('library');
+      // Find the option in the select
+      const select = document.getElementById('videoSelect');
+      let found = false;
+
+      // Loop through options to find the one with this ID (assuming value includes ID)
+      for (let i = 0; i < select.options.length; i++) {
+        const parts = select.options[i].value.split('|');
+        // Format: type|filename|id
+        if (parts.length >= 3 && parseInt(parts[2]) === videoId) {
+          select.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        // Trigger load setup (but translation is manual usually)
+        // Ideally we just load discussion. Let's force video load call.
+        // We can trick it by setting activeVideoId and showing player area
+        const combined = select.value;
+        const [source, filename, vid] = combined.split('|');
+        activeVideoId = videoId;
+
+        document.getElementById('player-area').style.display = 'block';
+        document.getElementById('translatedVideo').style.display = 'none';
+        document.getElementById('output').innerHTML = 'Selected from Dashboard. Click "Start Lesson" to watch, or scroll down to reply.';
+
+        loadComments(activeVideoId);
+
+        // Scroll to bottom
+        setTimeout(() => {
+          document.querySelector('.card:last-child').scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+      } else {
+        alert("Could not find this video in the library list. It might belong to another subject.");
+      }
+    }
+
+    ensureLoggedIn();
+
+    function openSettings() {
+      document.getElementById('settingsModal').style.display = 'flex';
+      document.querySelector('.settings-tab').click();
+      document.getElementById('settingsSearchInput').value = '';
+      loadSettingsProfile();
+      document.getElementById('settingThemeToggle').checked = localStorage.getItem('dark_mode') === 'true';
+    }
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+    function openSettingsTab(tabId, element) {
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById('settings-tab-' + tabId);
+      if (target) target.classList.add('active');
+      
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      if (element) element.classList.add('active');
+    }
+    function filterSettings() {
+      const query = document.getElementById('settingsSearchInput').value.toLowerCase();
+      const searchResultsPanel = document.getElementById('settings-tab-search');
+      const resultsContainer = document.getElementById('settings-search-results');
+      
+      if (query.trim() === '') {
+        document.querySelector('.settings-tab').click();
+        return;
+      }
+      
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      searchResultsPanel.classList.add('active');
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      
+      resultsContainer.innerHTML = '';
+      let foundCount = 0;
+      
+      document.querySelectorAll('.settings-panel:not(#settings-tab-search) .setting-item').forEach(item => {
+        const searchTerms = item.getAttribute('data-search') || '';
+        const title = item.querySelector('h4').innerText.toLowerCase();
+        const desc = item.querySelector('p').innerText.toLowerCase();
+        
+        if (searchTerms.includes(query) || title.includes(query) || desc.includes(query)) {
+          const clone = item.cloneNode(true);
+          resultsContainer.appendChild(clone);
+          foundCount++;
+        }
+      });
+      
+      if (foundCount === 0) {
+        resultsContainer.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--slate-400);"><i class="fa-solid fa-magnifying-glass fa-3x mb-4" style="display:block"></i><p>No settings matched your search.</p></div>';
+      }
+    }
+
+    async function loadSettingsProfile() {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('profileFullName').value = data.full_name || '';
+          document.getElementById('profileEmail').value = data.email || '';
+          document.getElementById('profilePhone').value = data.phone || '';
+        }
+      } catch (e) { console.error('Error loading profile', e); }
+    }
+
+    async function updateSettingsProfile(event) {
+      event.preventDefault();
+      const btn = document.getElementById('saveProfileBtn');
+      btn.innerText = 'Saving...';
+      try {
+        const res = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            full_name: document.getElementById('profileFullName').value,
+            email: document.getElementById('profileEmail').value,
+            phone: document.getElementById('profilePhone').value,
+          })
+        });
+        const data = await res.json();
+        if(data.success) {
+          btn.innerText = 'Saved!';
+          setTimeout(() => btn.innerText = 'Save Profile', 2000);
+        } else {
+          alert(data.error);
+          btn.innerText = 'Save Profile';
+        }
+      } catch(e) { alert('Error updating profile'); btn.innerText = 'Save Profile'; }
+    }
+
+    async function updateSettingsPassword(event) {
+      event.preventDefault();
+      const btn = document.getElementById('savePasswordBtn');
+      btn.innerText = 'Updating...';
+      try {
+        const cp = document.getElementById('currentPassword').value;
+        const np = document.getElementById('newPassword').value;
+        
+        const res = await fetch('/api/user/password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_password: cp, new_password: np })
+        });
+        const data = await res.json();
+        if(data.success) {
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          btn.innerText = 'Updated!';
+          setTimeout(() => btn.innerText = 'Update Password', 2000);
+        } else {
+          alert(data.error || "Failed to update password.");
+          btn.innerText = 'Update Password';
+        }
+      } catch(e) { alert('Error updating password'); btn.innerText = 'Update Password'; }
+    }
+
+    async function deactivateAccount() {
+      if(!confirm("Are you sure you want to completely delete your account? This action cannot be undone.")) return;
+      try {
+        const res = await fetch('/api/user/deactivate', { method: 'POST' });
+        if (res.ok) window.location.href = '/login.html';
+      } catch(e) { alert('Error deleting account.'); }
+    }
+
+    function toggleTheme(checkbox) {
+      localStorage.setItem('dark_mode', checkbox.checked);
+      if (checkbox.checked) {
+        document.body.setAttribute('data-theme', 'dark');
+        document.body.style.filter = "invert(1) hue-rotate(180deg)"; // Quick prototype dark mode
+      } else {
+        document.body.removeAttribute('data-theme');
+        document.body.style.filter = "none";
+      }
+    }
+  </script>
+
+  <!-- Complete Settings UI Injection -->
+  <style id="settings-styles">
+    .settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .settings-modal-content { background: white; width: 90%; max-width: 900px; height: 80vh; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .settings-header { padding: 20px 24px; border-bottom: 1px solid var(--slate-200); display: flex; justify-content: space-between; align-items: center; background: var(--slate-50); }
+    .settings-header h2 { margin: 0; font-size: 1.25rem; color: var(--slate-800); display: flex; align-items: center; gap: 10px; }
+    .settings-search { display: flex; align-items: center; background: white; border: 1px solid var(--slate-300); border-radius: 20px; padding: 6px 16px; width: 300px; }
+    .settings-search input { border: none; outline: none; margin-left: 8px; width: 100%; font-size: 0.9rem; }
+    .settings-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--slate-500); padding: 4px; border-radius: 4px; }
+    .settings-close:hover { background: var(--slate-200); color: var(--danger-600); }
+    
+    .settings-body { display: flex; flex: 1; overflow: hidden; }
+    .settings-sidebar { width: 250px; background: var(--slate-50); border-right: 1px solid var(--slate-200); padding: 16px 0; overflow-y: auto; }
+    .settings-tab { padding: 12px 24px; cursor: pointer; font-weight: 500; color: var(--slate-600); display: flex; align-items: center; gap: 12px; transition: all 0.2s; border-left: 3px solid transparent; }
+    .settings-tab:hover { background: var(--slate-100); color: var(--primary-600); }
+    .settings-tab.active { background: white; border-left: 3px solid var(--primary-600); color: var(--primary-600); font-weight: bold; }
+    
+    .settings-content { flex: 1; padding: 32px; overflow-y: auto; background: white; }
+    .settings-panel { display: none; }
+    .settings-panel.active { display: block; animation: fadeIn 0.3s; }
+    .settings-panel h3 { margin-bottom: 24px; color: var(--slate-800); font-size: 1.5rem; border-bottom: 2px solid var(--slate-100); padding-bottom: 12px; }
+    
+    .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--slate-200); border-radius: 12px; margin-bottom: 16px; transition: all 0.2s; }
+    .setting-item:hover { border-color: var(--primary-300); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .setting-info h4 { margin: 0 0 4px 0; color: var(--slate-800); font-size: 1rem; }
+    .setting-info p { margin: 0; color: var(--slate-500); font-size: 0.85rem; max-width: 400px; line-height: 1.4; }
+    
+    .settings-select { padding: 8px 12px; border: 1px solid var(--slate-300); border-radius: 8px; background: white; outline: none; font-size: 0.9rem; cursor: pointer; }
+    .settings-select:focus { border-color: var(--primary-500); box-shadow: 0 0 0 2px var(--primary-100); }
+    
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+    .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    input:checked + .toggle-slider { background-color: var(--primary-600); }
+    input:checked + .toggle-slider:before { transform: translateX(20px); }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+
+  <div id="settingsModal" class="settings-modal" style="display: none;">
+    <div class="settings-modal-content">
+      <div class="settings-header">
+        <h2><i class="fa-solid fa-gear text-slate-500"></i> Settings</h2>
+        <div class="settings-search">
+          <i class="fa-solid fa-search text-slate-400"></i>
+          <input type="text" id="settingsSearchInput" onkeyup="filterSettings()" placeholder="Search settings (e.g., 'password')">
+        </div>
+        <button class="settings-close" onclick="closeSettings()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-sidebar">
+          <div class="settings-tab active" onclick="openSettingsTab('account', this)"><i class="fa-solid fa-user" style="width:20px;"></i> Account & Profile</div>
+          <div class="settings-tab" onclick="openSettingsTab('preferences', this)"><i class="fa-solid fa-sliders" style="width:20px;"></i> App Preferences</div>
+          <div class="settings-tab" onclick="openSettingsTab('notifications', this)"><i class="fa-solid fa-bell" style="width:20px;"></i> Notifications</div>
+          <div class="settings-tab" onclick="openSettingsTab('privacy', this)"><i class="fa-solid fa-shield-halved" style="width:20px;"></i> Privacy & Data</div>
+          <div class="settings-tab" onclick="openSettingsTab('support', this)"><i class="fa-solid fa-circle-question" style="width:20px;"></i> Support & General</div>
+        </div>
+        <div class="settings-content">
+          <!-- Account Panel -->
+          <div id="settings-tab-account" class="settings-panel active">
+             <h3>Account & Profile Information</h3>
+             
+             <div class="setting-item" style="display:block;" data-search="name profile details email phone">
+               <div class="setting-info" style="margin-bottom:16px;">
+                 <h4>Profile Details</h4>
+                 <p>Update your personal information natively.</p>
+               </div>
+               <form onsubmit="updateSettingsProfile(event)" style="display:flex; flex-direction:column; gap:12px;">
+                 <input type="text" id="profileFullName" placeholder="Full Name" class="settings-select" style="width:100%">
+                 <input type="email" id="profileEmail" placeholder="Email Address" class="settings-select" style="width:100%">
+                 <input type="text" id="profilePhone" placeholder="Phone Number" class="settings-select" style="width:100%">
+                 <button type="submit" id="saveProfileBtn" class="btn btn-secondary" style="width:fit-content; border:1px solid var(--slate-300);">Save Profile</button>
+               </form>
+             </div>
+             
+             <div class="setting-item" data-search="billing subscription payment method history">
+               <div class="setting-info">
+                 <h4>Billing & Subscription</h4>
+                 <p>Access to subscription plans, payment methods, and billing history.</p>
+               </div>
+               <span class="tag" style="background:#f1f5f9; color:#475569; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600;">Free Tier</span>
+             </div>
+             
+             <div class="setting-item" style="display:block;" data-search="account security password two factor authentication connected devices 2fa">
+               <div class="setting-info" style="margin-bottom:16px;">
+                 <h4>Account Security</h4>
+                 <p>Update your account password securely.</p>
+               </div>
+               <form onsubmit="updateSettingsPassword(event)" style="display:flex; flex-direction:column; gap:12px;">
+                 <input type="password" id="currentPassword" placeholder="Current Password" class="settings-select" required style="width:100%">
+                 <input type="password" id="newPassword" placeholder="New Password" class="settings-select" required style="width:100%">
+                 <button type="submit" id="savePasswordBtn" class="btn btn-secondary" style="width:fit-content; background:var(--primary-50); color:var(--primary-700); border:1px solid var(--primary-200);">Update Password</button>
+               </form>
+             </div>
+          </div>
+          
+          <!-- Preferences Panel -->
+          <div id="settings-tab-preferences" class="settings-panel">
+             <h3>App Preferences & Behavior</h3>
+             
+             <div class="setting-item flex items-center justify-between" data-search="appearance theme dark light mode toggle">
+               <div class="setting-info">
+                 <h4>Appearance/Theme</h4>
+                 <p>Dark/light mode toggle.</p>
+               </div>
+               <label class="toggle-switch">
+                 <input type="checkbox" id="settingThemeToggle" onchange="toggleTheme(this)">
+                 <span class="toggle-slider"></span>
+               </label>
+             </div>
+             
+             <div class="setting-item" data-search="language region timezone">
+               <div class="setting-info">
+                 <h4>Language & Region</h4>
+                 <p>Language selection and time zone settings.</p>
+               </div>
+               <select class="settings-select"><option>English (US)</option><option>Hindi</option></select>
+             </div>
+             
+             <div class="setting-item flex items-center justify-between" data-search="functionality auto play offline mode">
+               <div class="setting-info">
+                 <h4>Functionality</h4>
+                 <p>Options to toggle specific app features (e.g., auto-play, offline mode).</p>
+               </div>
+               <label class="toggle-switch">
+                 <input type="checkbox" checked>
+                 <span class="toggle-slider"></span>
+               </label>
+             </div>
+          </div>
+          
+          <!-- Notifications Panel -->
+          <div id="settings-tab-notifications" class="settings-panel">
+             <h3>Notification Management</h3>
+             
+             <div class="setting-item flex items-center justify-between" data-search="push notifications toggle alerts">
+               <div class="setting-info">
+                 <h4>Push Notifications</h4>
+                 <p>Toggles to turn off/on alerts.</p>
+               </div>
+               <label class="toggle-switch">
+                 <input type="checkbox" checked>
+                 <span class="toggle-slider"></span>
+               </label>
+             </div>
+             
+             <div class="setting-item" data-search="email sms alerts updates">
+               <div class="setting-info">
+                 <h4>Email/SMS Alerts</h4>
+                 <p>Granular control over how often users receive updates.</p>
+               </div>
+               <select class="settings-select"><option>Immediately</option><option>Daily Digest</option><option>Never</option></select>
+             </div>
+          </div>
+          
+          <!-- Privacy Panel -->
+          <div id="settings-tab-privacy" class="settings-panel">
+             <h3>Privacy & Data</h3>
+             
+             <div class="setting-item" data-search="data usage privacy profile visibility sharing permissions">
+               <div class="setting-info">
+                 <h4>Data Usage</h4>
+                 <p>Options to manage privacy, such as profile visibility or data sharing permissions.</p>
+               </div>
+               <button class="btn btn-secondary">Manage</button>
+             </div>
+             
+             <div class="setting-item" data-search="data removal delete deactivate account">
+               <div class="setting-info">
+                 <h4>Data Removal</h4>
+                 <p>Options to delete data or deactivate/delete the account.</p>
+               </div>
+               <button onclick="deactivateAccount()" class="btn" style="background:#ef4444; color:white;">Deactivate Account</button>
+             </div>
+          </div>
+          
+          <!-- Support Panel -->
+          <div id="settings-tab-support" class="settings-panel">
+             <h3>Support & General</h3>
+             
+             <div class="setting-item" data-search="help feedback support center faq submission form">
+               <div class="setting-info">
+                 <h4>Help & Feedback</h4>
+                 <p>Support center, FAQ links, or feedback submission forms.</p>
+               </div>
+               <button class="btn btn-secondary">Visit FAQ</button>
+             </div>
+             
+             <div class="setting-item" data-search="app information version number legal terms privacy policy">
+               <div class="setting-info">
+                 <h4>App Information</h4>
+                 <p>Version number, legal terms, and privacy policy links.</p>
+               </div>
+               <button class="btn btn-secondary">View Policies</button>
+             </div>
+             
+             <div class="setting-item" data-search="sign out log out">
+               <div class="setting-info">
+                 <h4>Sign Out</h4>
+                 <p>A clear option to log out of the application.</p>
+               </div>
+               <button onclick="logout()" class="btn" style="background:var(--slate-800); color:white;" onmouseover="this.style.background='#991b1b'" onmouseout="this.style.background='var(--slate-800)'">Sign Out</button>
+             </div>
+          </div>
+          
+          <!-- Search Results Panel -->
+          <div id="settings-tab-search" class="settings-panel">
+             <h3>Search Results</h3>
+             <div id="settings-search-results"></div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

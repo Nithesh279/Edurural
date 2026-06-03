@@ -1,0 +1,19 @@
+# Ignore local database and logs
+*.db
+*.txt
+*.log
+
+# Ignore local environment variables/secrets
+.env
+
+# Ignore all audio/media files (keeps repo size small)
+*.mp3
+*.wav
+
+# Ignore python cache folders
+__pycache__/
+*.pyc
+# Ignore heavy video courses and output files
+*.mp4
+content/
+outputs/
