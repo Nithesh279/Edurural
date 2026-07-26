@@ -1,3 +1,15 @@
+import sys
+# Reconfigure stdout/stderr to UTF-8 to prevent print encoding crashes on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, send_file
 from flask_cors import CORS
@@ -353,9 +365,158 @@ SUPPORTED_LANGS = {
     "Korean": "ko", "Chinese (Simplified)": "zh-CN", "Chinese (Traditional)": "zh-TW",
     "Arabic": "ar", "Russian": "ru"
 }
+
+def translate_text(text: str, dest_lang_name: str) -> str:
+    """
+    Translates text to a target language.
+    Primary: deep-translator (GoogleTranslator)
+    Secondary: googletrans (as fallback)
+    """
+    if not text or not text.strip():
+        return ""
+        
+    # Determine the target language code
+    lang_code = SUPPORTED_LANGS.get(dest_lang_name)
+    if not lang_code:
+        if dest_lang_name in SUPPORTED_LANGS.values():
+            lang_code = dest_lang_name
+        else:
+            found = False
+            for k, v in SUPPORTED_LANGS.items():
+                if k.lower() == dest_lang_name.lower() or v.lower() == dest_lang_name.lower():
+                    lang_code = v
+                    found = True
+                    break
+            if not found:
+                lang_code = "en"
+                
+    if lang_code == "zh-CN":
+        deep_target = "zh-CN"
+        google_target = "zh-cn"
+    elif lang_code == "zh-TW":
+        deep_target = "zh-TW"
+        google_target = "zh-tw"
+    else:
+        deep_target = lang_code
+        google_target = lang_code
+
+    def is_translation_valid(original: str, translated: str, target_lang_code: str) -> bool:
+        if not translated or not translated.strip():
+            return False
+        if target_lang_code == "en":
+            return True
+        original_strip = original.strip().lower()
+        translated_strip = translated.strip().lower()
+        if original_strip == translated_strip:
+            common_words = {"the", "is", "and", "a", "of", "to", "in", "it", "you", "that", "this", "are", "with", "for", "on", "was", "as"}
+            words = set(original_strip.split())
+            if words.intersection(common_words):
+                return False
+        non_latin_langs = {"hi", "ta", "te", "ml", "kn", "gu", "mr", "bn", "pa", "ur", "ja", "ko", "zh", "zh-cn", "zh-tw", "ar", "ru"}
+        if target_lang_code.lower() in non_latin_langs:
+            common_words_found = 0
+            common_words = [" is ", " the ", " and ", " of ", " to ", " this ", " that ", " are "]
+            for word in common_words:
+                if word in f" {translated_strip} ":
+                    common_words_found += 1
+            if common_words_found >= 3:
+                return False
+        return True
+
+    # Smart chunking based on total length (max 4500 chars)
+    if len(text) < 4500:
+        chunks = [text]
+    else:
+        import re
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        chunks = []
+        current_chunk = []
+        current_len = 0
+        for sentence in sentences:
+            if current_len + len(sentence) + 1 > 4000:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = [sentence]
+                current_len = len(sentence)
+            else:
+                current_chunk.append(sentence)
+                current_len += len(sentence) + 1
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+
+    # 1. Try deep-translator first
+    try:
+        from deep_translator import GoogleTranslator
+        print(f"🌐 Translating via deep-translator to {dest_lang_name} ({deep_target})...")
+        translator_obj = GoogleTranslator(source='auto', target=deep_target)
+        
+        translated_chunks = []
+        import time
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+            translated_chunk = None
+            for attempt in range(3):
+                try:
+                    res = translator_obj.translate(chunk)
+                    if res and is_translation_valid(chunk, res, deep_target):
+                        translated_chunk = res
+                        break
+                    else:
+                        print(f"⚠️ deep-translator chunk attempt {attempt+1} got invalid/untranslated output.")
+                except Exception as chunk_err:
+                    print(f"⚠️ deep-translator chunk attempt {attempt+1} failed: {chunk_err}")
+                if attempt < 2:
+                    time.sleep(1)
+            if not translated_chunk:
+                raise Exception("Failed to get valid translation from deep-translator")
+            translated_chunks.append(translated_chunk)
+            
+        result = " ".join(translated_chunks)
+        if result and result.strip():
+            print("✅ deep-translator Translation succeeded.")
+            return result.strip()
+    except Exception as e:
+        print(f"⚠️ deep-translator translation failed: {e}. Trying fallback...")
+
+    # 2. Try googletrans as fallback
+    try:
+        from googletrans import Translator
+        print(f"🌐 Translating via googletrans to {dest_lang_name} ({google_target})...")
+        local_translator = Translator()
+        
+        translated_chunks = []
+        import time
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+            translated_chunk = None
+            for attempt in range(3):
+                try:
+                    res = local_translator.translate(chunk, dest=google_target)
+                    if res and res.text and is_translation_valid(chunk, res.text, google_target):
+                        translated_chunk = res.text
+                        break
+                    else:
+                        print(f"⚠️ googletrans chunk attempt {attempt+1} got invalid/untranslated output.")
+                except Exception as ex:
+                    print(f"⚠️ googletrans chunk attempt {attempt+1} failed: {ex}")
+                if attempt < 2:
+                    time.sleep(1)
+            if not translated_chunk:
+                raise Exception("Failed to get valid translation from googletrans")
+            translated_chunks.append(translated_chunk)
+            
+        result = " ".join(translated_chunks)
+        if result and result.strip():
+            print("✅ googletrans Translation succeeded.")
+            return result.strip()
+    except Exception as e:
+        print(f"❌ googletrans translation failed: {e}")
+        
+    raise Exception(f"Translation failed for {dest_lang_name}. Please try again later.")
 FEMALE_VOICE_BY_LANG = {
     "English": "en-US-AriaNeural",
-    "Hindi": "hi-IN-AnanyaNeural",
+    "Hindi": "hi-IN-SwaraNeural",
     "Tamil": "ta-IN-PallaviNeural",
     "Telugu": "te-IN-ShrutiNeural",
     "Malayalam": "ml-IN-SobhanaNeural",
@@ -508,10 +669,10 @@ async def synthesize_speech_edge(text: str, voice: str, file_path: str, rate: st
     # General fallbacks for languages that can intermittently fail (e.g., Punjabi)
     extra_fallbacks = {
         # Punjabi voices + Hindi + English as last resort
-        "pa-IN-NeerjaNeural": ["pa-IN-AmanNeural", "pa-IN-VaaniNeural", "pa-IN-OjasNeural", "hi-IN-AnanyaNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
-        "pa-IN-VaaniNeural": ["pa-IN-NeerjaNeural", "pa-IN-AmanNeural", "pa-IN-OjasNeural", "hi-IN-AnanyaNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
-        "pa-IN-OjasNeural": ["pa-IN-AmanNeural", "pa-IN-NeerjaNeural", "pa-IN-VaaniNeural", "hi-IN-AnanyaNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
-        "pa-IN-AmanNeural": ["pa-IN-NeerjaNeural", "pa-IN-VaaniNeural", "pa-IN-OjasNeural", "hi-IN-MadhurNeural", "hi-IN-AnanyaNeural", "en-US-AriaNeural"],
+        "pa-IN-NeerjaNeural": ["pa-IN-AmanNeural", "pa-IN-VaaniNeural", "pa-IN-OjasNeural", "hi-IN-SwaraNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
+        "pa-IN-VaaniNeural": ["pa-IN-NeerjaNeural", "pa-IN-AmanNeural", "pa-IN-OjasNeural", "hi-IN-SwaraNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
+        "pa-IN-OjasNeural": ["pa-IN-AmanNeural", "pa-IN-NeerjaNeural", "pa-IN-VaaniNeural", "hi-IN-SwaraNeural", "hi-IN-MadhurNeural", "en-US-AriaNeural"],
+        "pa-IN-AmanNeural": ["pa-IN-NeerjaNeural", "pa-IN-VaaniNeural", "pa-IN-OjasNeural", "hi-IN-MadhurNeural", "hi-IN-SwaraNeural", "en-US-AriaNeural"],
     }
     voices_to_try = [voice]
     if voice in arabic_fallbacks:
@@ -522,7 +683,30 @@ async def synthesize_speech_edge(text: str, voice: str, file_path: str, rate: st
     for attempt_voice in voices_to_try:
         try:
             print(f"   Attempting voice: {attempt_voice}")
-            communicate = edge_tts.Communicate(text=cleaned_text, voice=attempt_voice, rate=rate, pitch=pitch)
+            # If fallback voice is different from the originally selected voice,
+            # translate the text to the fallback voice's native language to prevent NoAudioReceived errors.
+            text_to_synthesize = cleaned_text
+            if attempt_voice != voice:
+                fallback_lang_name = None
+                for l, v in FEMALE_VOICE_BY_LANG.items():
+                    if v == attempt_voice:
+                        fallback_lang_name = l
+                        break
+                if not fallback_lang_name:
+                    for l, v in MALE_VOICE_BY_LANG.items():
+                        if v == attempt_voice:
+                            fallback_lang_name = l
+                            break
+                if fallback_lang_name:
+                    print(f"   🔄 Fallback voice language is {fallback_lang_name}. Translating text for fallback...")
+                    try:
+                        translated_fallback = translate_text(cleaned_text, fallback_lang_name)
+                        if translated_fallback and translated_fallback.strip():
+                            text_to_synthesize = translated_fallback.strip()
+                    except Exception as trans_err:
+                        print(f"   ⚠️ Fallback translation failed: {trans_err}")
+            
+            communicate = edge_tts.Communicate(text=text_to_synthesize, voice=attempt_voice, rate=rate, pitch=pitch)
             await communicate.save(file_path)
             if os.path.exists(file_path):
                 file_size = os.path.getsize(file_path)
@@ -677,22 +861,10 @@ def run_translation_job(job_id: str, source: str, source_filename: str, language
             print(f"🎙️ DETECTED gender: {gender}")
         set_job(job_id, progress=40, message="Translating")
         try:
-            translated_text = translator.translate(text, dest=SUPPORTED_LANGS[language]).text
+            translated_text = translate_text(text, language)
         except Exception as e:
-            print(f"❌ Translation failed for {language} ({SUPPORTED_LANGS[language]}): {e}")
-            lang_code = SUPPORTED_LANGS[language]
-            if lang_code == "zh-CN":
-                try:
-                    translated_text = translator.translate(text, dest="zh").text
-                except:
-                    raise Exception(f"Translation failed for {language}. Please try another language.")
-            elif lang_code == "zh-TW":
-                try:
-                    translated_text = translator.translate(text, dest="zh-tw").text
-                except:
-                    raise Exception(f"Translation failed for {language}. Please try another language.")
-            else:
-                raise Exception(f"Translation failed for {language}: {e}")
+            print(f"❌ Translation failed for {language}: {e}")
+            raise Exception(f"Translation failed for {language}: {e}")
         if not translated_text or not translated_text.strip():
             set_job(job_id, status="error", progress=100, message="Translation produced empty text")
             return
@@ -779,14 +951,10 @@ def download_notes(video_id):
     
     if target_lang and target_lang.lower() != "english":
         try:
-            from googletrans import Translator
-            _translator = Translator()
-            if target_lang in SUPPORTED_LANGS:
-                dest_code = SUPPORTED_LANGS[target_lang]
-                translated_obj = _translator.translate(transcript, dest=dest_code)
-                if translated_obj and translated_obj.text:
-                    transcript = translated_obj.text
-                    title = f"{title} ({target_lang})"
+            translated_notes = translate_text(transcript, target_lang)
+            if translated_notes and translated_notes.strip():
+                transcript = translated_notes
+                title = f"{title} ({target_lang})"
             
             # For non-English target languages, FPDF fonts may not support Unicode characters.
             # Return a UTF-8 encoded plain text file instead.
@@ -1048,22 +1216,10 @@ def upload_video():
             return jsonify({"error": "No speech detected in video"}), 400
         print(f"🌐 Translating to {language}...")
         try:
-            translated_text = translator.translate(text, dest=SUPPORTED_LANGS[language]).text
+            translated_text = translate_text(text, language)
         except Exception as e:
-            print(f"❌ Translation failed for {language} ({SUPPORTED_LANGS[language]}): {e}")
-            lang_code = SUPPORTED_LANGS[language]
-            if lang_code == "zh-CN":
-                try:
-                    translated_text = translator.translate(text, dest="zh").text
-                except:
-                    raise Exception(f"Translation failed for {language}. Please try another language.")
-            elif lang_code == "zh-TW":
-                try:
-                    translated_text = translator.translate(text, dest="zh-tw").text
-                except:
-                    raise Exception(f"Translation failed for {language}. Please try another language.")
-            else:
-                raise Exception(f"Translation failed for {language}: {e}")
+            print(f"❌ Translation failed for {language}: {e}")
+            raise Exception(f"Translation failed for {language}: {e}")
         print("🎤 Generating fluent audio using Edge Neural TTS...")
         try:
             fast_wav = os.path.join(OUTPUT_FOLDER, f"asr_{uuid.uuid4()}.wav")
